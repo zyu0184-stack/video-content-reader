@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 640" width="1040" height="640" role="img" aria-label="One video splits into three channels: picture, sound, and printed subtitle. The printed subtitle is read first.">
+  <defs>
+    <style>
+      .bg   { fill: #faf9f7; }
+      .box  { fill: #ffffff; stroke: #d6d3d1; stroke-width: 1.5; }
+      .hot  { fill: #fff7ed; stroke: #f59e0b; stroke-width: 2; }
+      .cold { fill: #f5f5f4; stroke: #d6d3d1; stroke-width: 1.5; stroke-dasharray: 5 4; }
+      .arrow{ stroke: #a8a29e; stroke-width: 1.6; fill: none; }
+      .arrow-hot { stroke: #d97706; stroke-width: 2; fill: none; }
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #1c1917; }
+      .ink  { font-size: 15px; }
+      .sm   { font-size: 12.5px; fill: #78716c; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; fill: #44403c; }
+      .lane { font-size: 12px; fill: #a8a29e; letter-spacing: .08em; }
+      .label{ font-size: 11px; fill: #b45309; letter-spacing: .08em; }
+    </style>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a8a29e"/>
+    </marker>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#d97706"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1040" height="640"/>
+
+  <!-- source -->
+  <rect x="28" y="280" width="132" height="64" rx="9" fill="#1c1917"/>
+  <text x="94" y="308" text-anchor="middle" style="fill:#fafaf9" font-size="15">video.mp4</text>
+  <text x="94" y="328" text-anchor="middle" style="fill:#a8a29e" font-size="11.5">one input</text>
+
+  <path class="arrow" d="M160,312 C192,312 196,162 226,162" marker-end="url(#a)"/>
+  <path class="arrow" d="M160,312 L226,312" marker-end="url(#a)"/>
+  <path class="arrow-hot" d="M160,312 C192,312 196,482 226,482" marker-end="url(#ah)"/>
+
+  <!-- lane labels -->
+  <text class="lane" x="230" y="118">PICTURE</text>
+  <text class="lane" x="230" y="278">SOUND</text>
+  <text class="label" x="230" y="438">PRINTED TEXT — TRY THIS FIRST</text>
+
+  <!-- ============ lane 1: picture ============ -->
+  <rect class="box" x="230" y="130" width="176" height="64" rx="8"/>
+  <text class="ink" x="318" y="157" text-anchor="middle">scene-change cut</text>
+  <text class="mono" x="318" y="177" text-anchor="middle">select=gt(scene,0.35)</text>
+
+  <rect class="box" x="434" y="130" width="152" height="64" rx="8"/>
+  <text class="ink" x="510" y="157" text-anchor="middle">interval fallback</text>
+  <text class="mono" x="510" y="177" text-anchor="middle">fps=1/N</text>
+
+  <path class="arrow" d="M406,162 L434,162" marker-end="url(#a)"/>
+  <path class="arrow" d="M586,162 L618,162" marker-end="url(#a)"/>
+
+  <rect class="cold" x="620" y="130" width="182" height="64" rx="8"/>
+  <text class="ink" x="711" y="157" text-anchor="middle">frames/</text>
+  <text class="sm" x="711" y="177" text-anchor="middle">what is on screen</text>
+
+  <!-- ============ lane 2: sound ============ -->
+  <rect class="box" x="230" y="290" width="176" height="64" rx="8"/>
+  <text class="ink" x="318" y="317" text-anchor="middle">16 kHz mono PCM</text>
+  <text class="mono" x="318" y="337" text-anchor="middle">-ac 1 -ar 16000</text>
+
+  <rect class="box" x="434" y="290" width="152" height="64" rx="8"/>
+  <text class="ink" x="510" y="317" text-anchor="middle">faster-whisper</text>
+  <text class="mono" x="510" y="337" text-anchor="middle">int8, 8 threads</text>
+
+  <path class="arrow" d="M406,322 L434,322" marker-end="url(#a)"/>
+  <path class="arrow" d="M586,322 L618,322" marker-end="url(#a)"/>
+
+  <rect class="cold" x="620" y="290" width="182" height="64" rx="8"/>
+  <text class="ink" x="711" y="317" text-anchor="middle">transcript.srt</text>
+  <text class="sm" x="711" y="337" text-anchor="middle">fallback — terms get lost</text>
+
+  <!-- ============ lane 3: printed text ============ -->
+  <rect class="hot" x="230" y="450" width="176" height="64" rx="8"/>
+  <text class="ink" x="318" y="477" text-anchor="middle">crop the band</text>
+  <text class="mono" x="318" y="497" text-anchor="middle">crop=iw:ih*0.30</text>
+
+  <rect class="hot" x="434" y="450" width="152" height="64" rx="8"/>
+  <text class="ink" x="510" y="477" text-anchor="middle">PP-OCRv4</text>
+  <text class="mono" x="510" y="497" text-anchor="middle">limit_type=max</text>
+
+  <rect class="hot" x="614" y="450" width="164" height="64" rx="8"/>
+  <text class="ink" x="696" y="477" text-anchor="middle">filter + merge</text>
+  <text class="sm" x="696" y="497" text-anchor="middle">watermark, UI, repeats</text>
+
+  <path class="arrow-hot" d="M406,482 L434,482" marker-end="url(#ah)"/>
+  <path class="arrow-hot" d="M586,482 L614,482" marker-end="url(#ah)"/>
+  <path class="arrow-hot" d="M778,482 L806,482" marker-end="url(#ah)"/>
+
+  <rect class="hot" x="808" y="450" width="200" height="64" rx="8"/>
+  <text class="ink" x="908" y="477" text-anchor="middle">subs.srt + subs.txt</text>
+  <text class="sm" x="908" y="497" text-anchor="middle">the intended script</text>
+
+  <!-- footer -->
+  <text class="sm" x="28" y="580">A short-video reupload usually carries Chinese subtitles printed over Japanese audio.</text>
+  <text class="sm" x="28" y="600">OCR of the band keeps every proper noun; transcription of the dub keeps none.</text>
+
+  <circle cx="790" cy="596" r="5" fill="#f59e0b"/>
+  <text class="sm" x="802" y="600">first choice</text>
+  <circle cx="905" cy="596" r="5" fill="#d6d3d1"/>
+  <text class="sm" x="917" y="600">fallback</text>
+</svg>

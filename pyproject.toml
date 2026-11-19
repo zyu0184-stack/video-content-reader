@@ -1,0 +1,14 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".git", "__pycache__"]
+
+[tool.ruff.lint]
+# correctness only: syntax errors, undefined names, dead imports, unused locals,
+# deprecated syntax. Style rules are not enforced — the scripts favour
+# locality over PEP 8 layout.
+select = ["E9", "F63", "F7", "F82", "F401", "F841", "W605"]
+
+[tool.ruff.lint.per-file-ignores]
+# long help strings and f-strings in the CLIs
+"scripts/*.py" = ["E501"]

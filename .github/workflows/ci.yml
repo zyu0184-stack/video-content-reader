@@ -1,0 +1,86 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  static:
+    name: lint and syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: install ruff
+        run: pip install --quiet ruff
+
+      - name: ruff
+        run: ruff check scripts/
+
+      - name: compile
+        run: |
+          python -m compileall -q scripts/
+          echo "all scripts compile"
+
+  e2e:
+    name: end-to-end on a synthetic clip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+
+      - name: python deps
+        run: pip install --quiet rapidocr-onnxruntime
+
+      - name: render a clip with a printed subtitle
+        run: |
+          FONT=$(fc-list :lang=zh file | head -1 | cut -d: -f1)
+          echo "using font: $FONT"
+          ffmpeg -y -v error \
+            -f lavfi -i "color=c=0x203040:s=640x360:d=6:r=10" \
+            -vf "drawtext=fontfile='${FONT}':text='测试字幕第一行':fontcolor=white:fontsize=26:x=(w-tw)/2:y=h*0.84" \
+            -pix_fmt yuv420p /tmp/clip.mp4
+          ls -l /tmp/clip.mp4
+
+      - name: probe detects burned-in text
+        run: python scripts/probe_video.py /tmp/clip.mp4
+
+      - name: ocr the band
+        run: python scripts/subocr.py /tmp/clip.mp4 --out /tmp/out --interval 1 --jobs 2
+
+      - name: assert the line came back
+        run: |
+          test -s /tmp/out/subs.txt || { echo "no transcript produced"; exit 1; }
+          grep -q "测试字幕" /tmp/out/subs.txt || { echo "expected text missing"; cat /tmp/out/subs.txt; exit 1; }
+          echo "recovered: $(cat /tmp/out/subs.txt)"
+
+      - name: clean_subs runs
+        run: python scripts/clean_subs.py /tmp/out/subs.txt
+
+      - name: srt is well formed
+        run: |
+          head -3 /tmp/out/subs.srt
+          grep -q -- "-->" /tmp/out/subs.srt || { echo "srt missing timecodes"; exit 1; }
+
+      - name: inspect the audio path without a model
+        run: python scripts/vidread.py /tmp/clip.mp4 --out /tmp/vr --no-whisper --max-frames 3
+
+      - name: keyframes were written
+        run: |
+          n=$(ls /tmp/vr/frames/*.jpg | wc -l)
+          echo "$n keyframes"
+          test "$n" -ge 1

@@ -2,6 +2,8 @@
 
 Read what a video actually says, without watching it.
 
+![One video splits into three channels: picture, sound, and printed subtitle. The printed subtitle is read first.](docs/pipeline.svg)
+
 Built for the case that breaks speech recognition: a Chinese-subtitled clip over a Japanese or Korean original audio track — the standard shape of a short-video reupload. The printed subtitle is the script the uploader intended; the audio is a dub nobody is listening to. This reads the printed subtitle.
 
 ## The decision that matters
@@ -106,6 +108,8 @@ scripts/clean_subs.py    noise removal
 scripts/fetch_model.sh   whisper model download bypassing the hub API
 references/ocr-tuning.md      measured parameter sweeps
 references/troubleshooting.md real errors and fixes
+docs/pipeline.svg             the diagram above
+.github/workflows/ci.yml      lint, compile, end-to-end OCR on a synthetic clip
 ```
 
 ## Model download
