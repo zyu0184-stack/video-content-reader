@@ -1,0 +1,9 @@
+# Windows checkouts silently convert these to CRLF, which breaks
+# `#!/bin/sh` scripts on Linux and produces noisy diffs in CI.
+*.sh  text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.py  text eol=lf
+*.toml text eol=lf
+*.md  text eol=lf
+*.svg text eol=lf
