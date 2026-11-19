@@ -1,0 +1,25 @@
+# model payloads
+models/
+*.bin
+*.safetensors
+
+# working output
+clips/
+out/
+_frames/
+_inspect/
+*.wav
+*.mp4
+*.jpg
+*.png
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# os
+.DS_Store
+Thumbs.db
