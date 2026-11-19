@@ -1,0 +1,107 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build sdist and wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # a v0.2.0 tag that still says 0.1.0 in pyproject would publish a wheel
+      # whose filename disagrees with the release — refuse rather than ship it
+      - name: the tag matches the version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          ver=$(python -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          echo "tag=$tag version=$ver"
+          test "$tag" = "$ver" || { echo "tag $tag does not match pyproject version $ver"; exit 1; }
+
+      - name: build
+        run: |
+          pip install --quiet build
+          python -m build --outdir dist
+          ls -l dist
+
+      - name: verify the wheel
+        run: python scripts/check_wheel.py dist
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: attach the artifacts to a release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          wheel=$(basename dist/*.whl)
+          sdist=$(basename dist/*.tar.gz)
+          cat > /tmp/notes.md <<'EOF'
+          ## install
+
+          ```
+          pip install video_content_reader-<version>-py3-none-any.whl
+          ```
+
+          With OCR support for burned-in subtitles:
+
+          ```
+          pip install "video-content-reader[ocr]"
+          ```
+
+          With speech-to-text as well:
+
+          ```
+          pip install "video-content-reader[all]"
+          ```
+
+          ## use
+
+          ```
+          vidprobe clip.mp4                                    # which reader applies
+          subocr clip.mp4 --interval 0.8 --jobs 4              # burned-in subtitles
+          vidread clip.mp4 --out keyframes                     # scenes, frames, audio
+          cleansubs subs/subs.txt                              # tidy the transcript
+          ```
+
+          ffmpeg has to be on PATH. No model download is needed for the OCR path.
+          EOF
+
+          {
+            echo "Artifacts: $wheel, $sdist"
+            echo
+            cat /tmp/notes.md
+          } > /tmp/body.md
+
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file /tmp/body.md \
+            --verify-tag

@@ -13,6 +13,13 @@ _inspect/
 *.jpg
 *.png
 
+# packaging
+build/
+dist/
+*.egg-info/
+pip-build-env-*/
+pip-build-tracker-*/
+
 # python
 __pycache__/
 *.pyc

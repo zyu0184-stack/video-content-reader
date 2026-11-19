@@ -1,6 +1,7 @@
 # video-content-reader
 
 [![ci](https://github.com/zyu0184-stack/video-content-reader/actions/workflows/ci.yml/badge.svg)](https://github.com/zyu0184-stack/video-content-reader/actions/workflows/ci.yml)
+[![release](https://github.com/zyu0184-stack/video-content-reader/actions/workflows/release.yml/badge.svg)](https://github.com/zyu0184-stack/video-content-reader/actions/workflows/release.yml)
 
 Read what a video actually says, without watching it.
 
@@ -31,27 +32,41 @@ Three proper nouns — 天与咒缚, 禅院家, 咒术师 — the OCR got all th
 ## Install
 
 ```bash
-python -m pip install rapidocr-onnxruntime        # OCR path
-python -m pip install faster-whisper              # audio path
-# ffmpeg + ffprobe on PATH
+git clone https://github.com/zyu0184-stack/video-content-reader
+cd video-content-reader
+pip install ".[ocr]"        # subtitle band reader
+pip install ".[all]"        # adds faster-whisper for the audio path
 ```
 
-ffmpeg 7 or newer. `-vsync` is gone from 7, and the scripts use `-fps_mode`.
+That puts four commands on PATH:
+
+| Command | Replaces |
+|---|---|
+| `vidprobe` | `python scripts/probe_video.py` |
+| `subocr` | `python scripts/subocr.py` |
+| `vidread` | `python scripts/vidread.py` |
+| `cleansubs` | `python scripts/clean_subs.py` |
+
+The files under `scripts/` stay as thin shims, so a checkout works with no install at all — every command below has the same flags either way.
+
+ffmpeg 7 or newer on PATH. `-vsync` is gone from 7, and the scripts use `-fps_mode`.
+
+Tagged releases carry a wheel and an sdist: [releases](https://github.com/zyu0184-stack/video-content-reader/releases).
 
 ## Use
 
 **1. Inspect — decide the branch before spending minutes**
 
 ```bash
-python scripts/probe_video.py clip.mp4
+vidprobe clip.mp4
 ```
 
-Prints codec, duration, audio language, embedded subtitle tracks, and whether the bottom band carries printed text across sampled frames. Exit 0 means burned-in subtitles are present.
+Prints codec, duration, audio language, embedded subtitle tracks, and whether the bottom band carries printed text across sampled frames. Exit 0 means burned-in subtitles are present, and the last line tells you which command to run next.
 
 **2. Extract**
 
 ```bash
-python scripts/subocr.py clip.mp4 --interval 0.8 --jobs 4
+subocr clip.mp4 --interval 0.8 --jobs 4
 ```
 
 ```
@@ -63,7 +78,7 @@ clip/ocr_raw.jsonl     per-frame boxes with coordinates and confidence
 **3. Clean, then read**
 
 ```bash
-python scripts/clean_subs.py clip/subs.txt
+cleansubs clip/subs.txt
 ```
 
 Drops kana lines (anime staff rolls), platform UI (`抖音号：`, `截图保存到相册`), two-character fragments, and the repeats a static graphic produces.
@@ -71,7 +86,7 @@ Drops kana lines (anime staff rolls), platform UI (`抖音号：`, `截图保存
 **No printed subtitle?** Take the audio path:
 
 ```bash
-python scripts/vidread.py clip.mp4 --lang auto
+vidread clip.mp4 --lang auto
 ```
 
 Keyframes, 16 kHz mono audio, every embedded track, and a transcript in one pass.
@@ -86,7 +101,7 @@ Ryzen 7 8845HS, 8 cores / 16 threads, CPU only. 19 minutes of footage across fou
 | Subtitle lines recovered | 647 |
 | Whisper `small`, int8, 70.8 s audio, 8 threads | 40.2 s, 1.76× realtime |
 
-Two settings carry most of the speed. Both are in the scripts, both are documented with the sweep that produced them in [references/ocr-tuning.md](references/ocr-tuning.md):
+Two settings carry most of the speed. Both are in the modules, both are documented with the sweep that produced them in [references/ocr-tuning.md](references/ocr-tuning.md):
 
 - `det_limit_type='max'` instead of the library default — **4.4× faster**, 1.41 → 0.32 s/frame. The default enlarges the short side of a wide subtitle band by up to 6.8×.
 - Explicit `intra_op_num_threads` per worker — the default `-1` gives every worker every core, and four workers then fight over eight hardware threads.
@@ -102,16 +117,21 @@ Failure modes with exact error strings: [references/troubleshooting.md](referenc
 ## Files
 
 ```
+src/video_content_reader/
+    probe_video.py       probe + burned-in subtitle detection
+    subocr.py            band crop, OCR, watermark filter, sentence merge
+    vidread.py           keyframes + audio + embedded subs + whisper
+    clean_subs.py        noise removal
+scripts/
+    *.py                 shims, so a checkout runs without pip install
+    check_wheel.py       verifies a built wheel before release
+    fetch_model.sh       whisper model download bypassing the hub API
 SKILL.md                 agent-facing instructions and decision table
-scripts/probe_video.py       probe + burned-in subtitle detection
-scripts/subocr.py        band crop, OCR, watermark filter, sentence merge
-scripts/vidread.py       keyframes + audio + embedded subs + whisper
-scripts/clean_subs.py    noise removal
-scripts/fetch_model.sh   whisper model download bypassing the hub API
 references/ocr-tuning.md      measured parameter sweeps
 references/troubleshooting.md real errors and fixes
 docs/pipeline.svg             the diagram above
-.github/workflows/ci.yml      lint, compile, end-to-end OCR on a synthetic clip
+.github/workflows/ci.yml      lint, build+install the wheel, end-to-end OCR
+.github/workflows/release.yml tag -> sdist + wheel -> GitHub release
 ```
 
 ## Model download
@@ -120,8 +140,10 @@ docs/pipeline.svg             the diagram above
 
 ```bash
 ./scripts/fetch_model.sh small
-python scripts/vidread.py clip.mp4 --model-path models/faster-whisper-small
+vidread clip.mp4 --model-path models/faster-whisper-small
 ```
+
+`vidread` looks for `models/faster-whisper-<name>` relative to the working directory, the repo root, and `~/.cache/faster-whisper`, so an installed wheel finds a model the same way a checkout does.
 
 ## License
 

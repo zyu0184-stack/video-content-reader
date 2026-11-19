@@ -21,12 +21,40 @@ jobs:
         run: pip install --quiet ruff
 
       - name: ruff
-        run: ruff check scripts/
+        run: ruff check .
 
       - name: compile
         run: |
-          python -m compileall -q scripts/
-          echo "all scripts compile"
+          python -m compileall -q src scripts
+          echo "all modules compile"
+
+  package:
+    name: build and install the wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: build the sdist and the wheel
+        run: |
+          pip install --quiet build
+          python -m build --outdir /tmp/dist
+          ls -l /tmp/dist
+
+      - name: the wheel carries the readers and their entry points
+        run: python scripts/check_wheel.py /tmp/dist
+
+      - name: install it and call every command
+        run: |
+          pip install --quiet /tmp/dist/*.whl
+          cd /tmp
+          for c in vidprobe subocr vidread cleansubs; do
+            printf "%-10s " "$c"
+            $c --help | head -1
+          done
 
   e2e:
     name: end-to-end on a synthetic clip
@@ -56,6 +84,8 @@ jobs:
             -pix_fmt yuv420p /tmp/clip.mp4
           ls -l /tmp/clip.mp4
 
+      # the shims under scripts/ are what people run from a checkout, so the
+      # end-to-end job exercises them rather than the installed console scripts
       - name: probe detects burned-in text
         run: python scripts/probe_video.py /tmp/clip.mp4
 

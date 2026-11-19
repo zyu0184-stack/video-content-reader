@@ -1,14 +1,57 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-content-reader"
+version = "0.1.0"
+description = "Read what a video says: burned-in subtitles via OCR, speech-to-text as the fallback."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "zyu0184-stack" }]
+keywords = ["video", "subtitles", "ocr", "whisper", "transcript", "ffmpeg"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Text Processing",
+]
+# The core readers only need the Python standard library and an ffmpeg on PATH.
+# OCR and speech-to-text are opt-in extras so a plain install stays small.
+dependencies = []
+
+[project.optional-dependencies]
+ocr = ["rapidocr-onnxruntime>=1.4.4"]
+whisper = ["faster-whisper>=1.0"]
+all = ["rapidocr-onnxruntime>=1.4.4", "faster-whisper>=1.0"]
+
+[project.urls]
+Homepage = "https://github.com/zyu0184-stack/video-content-reader"
+Issues = "https://github.com/zyu0184-stack/video-content-reader/issues"
+
+[project.scripts]
+vidprobe = "video_content_reader.probe_video:main"
+subocr = "video_content_reader.subocr:main"
+vidread = "video_content_reader.vidread:main"
+cleansubs = "video_content_reader.clean_subs:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-exclude = [".git", "__pycache__"]
+exclude = [".git", "__pycache__", "build", "dist"]
 
 [tool.ruff.lint]
 # correctness only: syntax errors, undefined names, dead imports, unused locals,
-# deprecated syntax. Style rules are not enforced — the scripts favour
-# locality over PEP 8 layout.
+# deprecated syntax. Style rules are not enforced — the modules favour locality
+# over PEP 8 layout.
 select = ["E9", "F63", "F7", "F82", "F401", "F841", "W605"]
 
 [tool.ruff.lint.per-file-ignores]
 # long help strings and f-strings in the CLIs
-"scripts/*.py" = ["E501"]
+"src/video_content_reader/*.py" = ["E501"]
+"scripts/*.py" = ["E402"]

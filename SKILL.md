@@ -29,6 +29,8 @@ Three proper nouns (天与咒缚, 禅院家, 咒术师): OCR gets all three, tra
 
 ## Step 0 — Inspect before doing anything
 
+Commands below use `python scripts/<name>.py`, which runs straight from a checkout with no install. When the package is installed the same flags work as `vidprobe` / `subocr` / `vidread` / `cleansubs`.
+
 ```bash
 python scripts/probe_video.py VIDEO
 ```
@@ -110,7 +112,10 @@ Report figures with units: frames sampled, wall-clock seconds, per-frame cost. "
 ## Dependencies
 
 ```bash
-python -m pip install faster-whisper rapidocr-onnxruntime
+pip install ".[ocr]"        # OCR path only
+pip install ".[all]"        # OCR + speech-to-text
+# no install wanted? the two libraries on their own:
+pip install rapidocr-onnxruntime faster-whisper
 # plus ffmpeg + ffprobe on PATH
 ```
 
