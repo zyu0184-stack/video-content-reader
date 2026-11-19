@@ -1,5 +1,7 @@
 # video-content-reader
 
+[![ci](https://github.com/zyu0184-stack/video-content-reader/actions/workflows/ci.yml/badge.svg)](https://github.com/zyu0184-stack/video-content-reader/actions/workflows/ci.yml)
+
 Read what a video actually says, without watching it.
 
 ![One video splits into three channels: picture, sound, and printed subtitle. The printed subtitle is read first.](docs/pipeline.svg)
